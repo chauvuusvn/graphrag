@@ -36,14 +36,14 @@ class JsonCache(Cache):
             try:
                 data = await self._storage.get(key)
                 data = json.loads(data)
-            except UnicodeDecodeError:
-                await self._storage.delete(key)
-                return None
-            except json.decoder.JSONDecodeError:
+            except (UnicodeDecodeError, json.decoder.JSONDecodeError):
                 await self._storage.delete(key)
                 return None
             else:
-                return data.get("result")
+                if not isinstance(data, dict) or "result" not in data:
+                    await self._storage.delete(key)
+                    return None
+                return data["result"]
 
         return None
 
